@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Grupo Cerrado — DRE Gerencial (demo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0f172a;
+    --muted:#6b7280;
+    --line:#e5e7eb;
+    --soft:#f8fafc;
+    --brand:#111827;
+    --good:#059669;
+    --bad:#dc2626;
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff;color:var(--ink)}
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 16px}
+  header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+  .logo{width:72px;height:72px;border:1px solid var(--line);border-radius:12px;display:grid;place-items:center;font-weight:800}
+  .brand{line-height:1}
+  .brand b{display:block;font-size:22px}
+  .brand small{color:var(--muted)}
+  .tabs{margin-left:auto;display:flex;gap:6px}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer}
+  .tab[aria-selected="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+  h1{margin:8px 0 16px;font-size:28px}
+  .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+  .card{border:1px solid var(--line);border-radius:var(--radius);padding:16px;background:#fff}
+  .controls{display:grid;gap:12px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  select,input[type="date"]{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:#fff}
+  .btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 14px;font-weight:600;cursor:pointer}
+  .btn.active{background:#111827;color:#fff;border-color:#111827}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:12px;color:var(--muted);text-align:left}
+  td:nth-child(2),td:nth-child(3){text-align:right}
+  .ttl{font-weight:800}
+  .em{color:#0ea5a4;font-weight:800}
+  .sum{border-top:2px solid #000}
+  .kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .kpi{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:default}
+  .kpi.button{cursor:pointer;user-select:none}
+  .kpi .v{font-weight:800;font-size:20px}
+  .kpi .l{color:var(--muted);font-size:12px}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .small{color:var(--muted);font-size:12px}
+  @media (max-width:960px){.grid{grid-template-columns:1fr}}
+
+  /* toast */
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111827;color:#fff;padding:12px 16px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+  .toast.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">GC</div>
+      <div class="brand">
+        <b>Grupo Cerrado</b>
+        <small>Cerrado Finanças • DRE Gerencial</small>
+      </div>
+      <div class="tabs" role="tablist" aria-label="abas">
+        <button class="tab" role="tab" aria-selected="true" data-tab="dre">DRE</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="indices">Índices</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="detalhe">Detalhe</button>
+      </div>
+    </header>
+
+    <h1 id="titulo">DRE Financeiro</h1>
+
+    <!-- VISÃO DRE -->
+    <section id="v-dre" class="view">
+      <div class="grid">
+        <div class="card">
+          <table id="dre">
+            <thead>
+              <tr><th>Conta</th><th>Valor</th><th>%</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <p class="small" style="margin-top:8px">Dados fictícios</p>
+        </div>
+
+        <div class="card controls">
+          <div class="row">
+            <select id="empresa">
+              <option>Cerrado Finanças</option>
+            </select>
+          </div>
+          <div class="row">
+            <div>
+              <div class="small">Início</div>
+              <input id="ini" type="date">
+            </div>
+            <div>
+              <div class="small">Fim</div>
+              <input id="fim" type="date">
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn active" data-filter="todos">Todos</button>
+            <button class="btn" data-filter="receita">Receita</button>
+            <button class="btn" data-filter="despesa">Despesa</button>
+          </div>
+          <div class="kpis" id="kpis"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISÃO ÍNDICES -->
+    <section id="v-indices" class="view" hidden>
+      <div class="grid">
+        <div class="card">
+          <div class="kpis" id="kpis2"></div>
+          <p class="small" style="margin-top:8px">Valores de referência fictícios para empresas de serviços</p>
+        </div>
+        <div class="card controls">
+          <div class="row">
+            <select disabled><option>Cerrado Finanças</option></select>
+          </div>
+          <div class="row">
+            <div><div class="small">Início</div><input id="ini2" type="date"></div>
+            <div><div class="small">Fim</div><input id="fim2" type="date"></div>
+          </div>
+          <div class="row">
+            <button class="btn active" data-filter2="todos">Todos</button>
+            <button class="btn" data-filter2="receita">Receita</button>
+            <button class="btn" data-filter2="despesa">Despesa</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VISÃO DETALHE -->
+    <section id="v-detalhe" class="view" hidden>
+      <div class="grid">
+        <div class="card">
+          <table id="itens">
+            <thead>
+              <tr><th>Item</th><th>Valor</th><th>Data</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="card controls">
+          <div class="row">
+            <select disabled><option>Cerrado Finanças</option></select>
+          </div>
+          <div class="row">
+            <div><div class="small">Início</div><input id="ini3" type="date"></div>
+            <div><div class="small">Fim</div><input id="fim3" type="date"></div>
+          </div>
+          <div class="row">
+            <button class="btn active" data-filter3="todos">Todos</button>
+            <button class="btn" data-filter3="receita">Receita</button>
+            <button class="btn" data-filter3="despesa">Despesa</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* =======================  DATASET FICTÍCIO  =======================
+Estrutura:
+tipo: 'Receita' | 'Despesa'
+grupo: 'Deducoes' | 'CSP' | 'CPV' | 'Despesas' | 'Financeiro' | 'Impostos' | 'Outros' | 'Receita'
+*/
+const seed = [
+  // Receita bruta (12 meses)
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1200000, data:'2024-01-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1215000, data:'2024-02-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1240000, data:'2024-03-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1250000, data:'2024-04-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1265000, data:'2024-05-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1275000, data:'2024-06-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1290000, data:'2024-07-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1305000, data:'2024-08-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1310000, data:'2024-09-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1325000, data:'2024-10-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1330000, data:'2024-11-10'},
+  {tipo:'Receita',grupo:'Receita',descricao:'Serviços recorrentes',valor: 1350000, data:'2024-12-10'},
+
+  // Deduções sobre receita
+  {tipo:'Despesa',grupo:'Deducoes',descricao:'Tributos sobre faturamento',valor: 180000, data:'2024-04-15'},
+  {tipo:'Despesa',grupo:'Deducoes',descricao:'Devoluções e descontos',valor: 45000, data:'2024-09-15'},
+
+  // CSP e CPV
+  {tipo:'Despesa',grupo:'CSP',descricao:'Equipe operacional',valor: 4600000, data:'2024-12-31'},
+  {tipo:'Despesa',grupo:'CPV',descricao:'Materiais',valor: 180000, data:'2024-06-15'},
+
+  // Despesas operacionais
+  {tipo:'Despesa',grupo:'Despesas',descricao:'Administrativas',valor: 1600000, data:'2024-03-31'},
+  {tipo:'Despesa',grupo:'Despesas',descricao:'Comercial',valor: 620000, data:'2024-07-31'},
+  {tipo:'Despesa',grupo:'Despesas',descricao:'Marketing',valor: 380000, data:'2024-10-02'},
+
+  // Financeiro
+  {tipo:'Despesa',grupo:'Financeiro',descricao:'Despesas financeiras',valor: 220000, data:'2024-10-10'},
+
+  // Impostos sobre lucro
+  {tipo:'Despesa',grupo:'Impostos',descricao:'IRPJ/CSLL',valor: 780000, data:'2024-12-20'},
+
+  // Ajustes patrimoniais
+  {tipo:'Despesa',grupo:'Outros',descricao:'Obras',valor: 220000, data:'2024-05-01'},
+  {tipo:'Despesa',grupo:'Outros',descricao:'Móveis',valor: 90000, data:'2024-06-01'},
+  {tipo:'Despesa',grupo:'Outros',descricao:'Veículos',valor: 60000, data:'2024-03-01'},
+  {tipo:'Despesa',grupo:'Outros',descricao:'Retiradas',valor: 400000, data:'2024-09-01'},
+];
+
+// helpers
+const BRL = n => n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const pct = n => (n*100).toFixed(2).replace('.',',') + '%';
+const within = (d,ini,fim) => (!ini || d>=ini) && (!fim || d<=fim);
+
+// estado
+let filtro = 'todos';
+let ini = '2024-01-01';
+let fim = '2024-12-31';
+
+// cálculo DRE
+function calcular(items){
+  const receitaBruta = sum(items.filter(x=>x.grupo==='Receita').map(x=>x.valor));
+  const deducoes = sum(items.filter(x=>x.grupo==='Deducoes').map(x=>x.valor));
+  const receitaLiquida = receitaBruta - deducoes;
+  const csp = sum(items.filter(x=>x.grupo==='CSP').map(x=>x.valor));
+  const cpv = sum(items.filter(x=>x.grupo==='CPV').map(x=>x.valor));
+  const despesas = sum(items.filter(x=>x.grupo==='Despesas').map(x=>x.valor));
+  const resultadoOperacional = receitaLiquida - csp - cpv - despesas;
+  const financeiro = - sum(items.filter(x=>x.grupo==='Financeiro').map(x=>x.valor));
+  const antesImpostos = resultadoOperacional + financeiro;
+  const impostos = sum(items.filter(x=>x.grupo==='Impostos').map(x=>x.valor));
+  const resultadoLiquido = antesImpostos - impostos;
+  const outros = sum(items.filter(x=>x.grupo==='Outros').map(x=>x.valor));
+  const resultadoFinal = resultadoLiquido - outros;
+  const base = receitaBruta || 1;
+  const perc = v => v/base;
+
+  return {
+    linhas: [
+      ['RECEITA BRUTA', receitaBruta, 'ttl'],
+      ['(-) DEDUÇÕES', -deducoes, null, perc(-deducoes)],
+      ['(=) RECEITA LÍQUIDA', receitaLiquida, 'ttl', perc(receitaLiquida)],
+      ['(-) CUSTOS SERVIÇOS PRESTADOS', -csp, null, perc(-csp)],
+      ['(-) CUSTOS PRODUTOS VENDIDOS', -cpv, null, perc(-cpv)],
+      ['(-) DESPESAS', -despesas, null, perc(-despesas)],
+      ['(=) RESULTADO OPERACIONAL', resultadoOperacional, 'em', perc(resultadoOperacional)],
+      ['RESULTADO FINANCEIRO', financeiro, null, perc(financeiro)],
+      ['(=) RESULTADO A/ IMPOSTOS', antesImpostos, 'ttl', perc(antesImpostos)],
+      ['(-) IMPOSTOS', -impostos, null, perc(-impostos)],
+      ['(=) RESULTADO LÍQUIDO', resultadoLiquido, 'em', perc(resultadoLiquido)],
+      ['(-) OBRAS', -sum(items.filter(x=>x.grupo==='Outros'&&/Obras/.test(x.descricao)).map(x=>x.valor)), null, null],
+      ['(-) MÓVEIS', -sum(items.filter(x=>x.grupo==='Outros'&&/Móveis/.test(x.descricao)).map(x=>x.valor)), null, null],
+      ['(-) VEÍCULOS', -sum(items.filter(x=>x.grupo==='Outros'&&/Veículos/.test(x.descricao)).map(x=>x.valor)), null, null],
+      ['(-) RETIRADAS', -sum(items.filter(x=>x.grupo==='Outros'&&/Retiradas/.test(x.descricao)).map(x=>x.valor)), null, null],
+      ['(=) RESULTADO FINAL', resultadoFinal, 'sum', perc(resultadoFinal)],
+    ],
+    kpis: { receitaBruta, resultadoOperacional, resultadoFinal, receitaLiquida, resultadoLiquido }
+  };
+}
+function sum(arr){return arr.reduce((a,b)=>a+(b||0),0)}
+function filtrar(){
+  const dIni = ini ? new Date(ini) : null;
+  const dFim = fim ? new Date(fim) : null;
+  let itens = seed.filter(x=>within(new Date(x.data), dIni, dFim));
+  if(filtro==='receita') itens = itens.filter(x=>x.tipo==='Receita');
+  if(filtro==='despesa') itens = itens.filter(x=>x.tipo==='Despesa');
+  return itens;
+}
+
+// índices de referência (fixos e fictícios)
+const market = [
+  {k:'margem_bruta', label:'Margem Bruta', value:0.55, fmt:'pct', msg:'Acima de 50% em serviços indica custo direto sob controle.'},
+  {k:'margem_oper', label:'Margem Operacional', value:0.16, fmt:'pct', msg:'Entre 12% e 20% sugere eficiência em despesas operacionais.'},
+  {k:'margem_ebitda', label:'Margem EBITDA', value:0.18, fmt:'pct', msg:'Faixa comum de 15% a 25% em operações maduras.'},
+  {k:'margem_liq', label:'Margem Líquida', value:0.14, fmt:'pct', msg:'De 10% a 18% costuma ser saudável em serviços B2B.'},
+  {k:'cob_juros', label:'Cobertura de Juros', value:4.3, fmt:'x', msg:'Acima de 3x sinaliza conforto para honrar encargos.'},
+  {k:'ponto_eq', label:'Ponto de Equilíbrio', value:0.78, fmt:'pct', msg:'Abaixo de 85% dá folga para variações de receita.'},
+  {k:'ciclo_caixa', label:'Ciclo de Caixa', value:35, fmt:'dias', msg:'Entre 30 e 45 dias reduz pressão de capital de giro.'},
+  {k:'giro_ativo', label:'Giro do Ativo', value:1.7, fmt:'x', msg:'De 1,5x a 2,0x é comum em serviços com ativos leves.'}
+];
+
+// render DRE + KPIs
+function renderDRE(){
+  const data = calcular(filtrar());
+  const tb = document.querySelector('#dre tbody');
+  tb.innerHTML = '';
+  data.linhas.forEach(([nome,valor,cl,pp])=>{
+    const tr = document.createElement('tr');
+    if(cl) tr.className = cl;
+    const td1 = document.createElement('td'); td1.textContent = nome;
+    const td2 = document.createElement('td'); td2.textContent = BRL(valor);
+    const td3 = document.createElement('td'); td3.textContent = pp==null?'':pct(pp);
+    tr.append(td1,td2,td3);
+    tb.appendChild(tr);
+  });
+
+  const k = document.getElementById('kpis');
+  k.innerHTML = `
+    <div class="kpi"><div class="v">${BRL(data.kpis.receitaBruta)}</div><div class="l">Receita Bruta</div></div>
+    <div class="kpi"><div class="v">${BRL(data.kpis.resultadoOperacional)}</div><div class="l">Resultado Operacional</div></div>
+    <div class="kpi"><div class="v ${data.kpis.resultadoFinal>=0?'pos':'neg'}">${BRL(data.kpis.resultadoFinal)}</div><div class="l">Resultado Final</div></div>
+  `;
+
+  const itens = document.querySelector('#itens tbody');
+  itens.innerHTML = '';
+  filtrar().forEach(it=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${it.descricao} — ${it.grupo}</td><td>${BRL(it.tipo==='Despesa'?-it.valor:it.valor)}</td><td>${it.data}</td>`;
+    itens.appendChild(tr);
+  });
+
+  renderIndices();
+}
+
+// render índices fictícios e clicáveis
+function renderIndices(){
+  const box = document.getElementById('kpis2');
+  box.innerHTML = '';
+  market.forEach(m=>{
+    const el = document.createElement('div');
+    el.className = 'kpi button';
+    el.setAttribute('tabindex','0');
+    el.dataset.msg = m.msg;
+    el.innerHTML = `<div class="v">${formatIndex(m.value, m.fmt)}</div><div class="l">${m.label}</div>`;
+    el.addEventListener('click', ()=> toast(m.msg));
+    el.addEventListener('keypress', (e)=>{ if(e.key==='Enter' || e.key===' ') toast(m.msg) });
+    box.appendChild(el);
+  });
+}
+function formatIndex(v,fmt){
+  if(fmt==='pct') return pct(v);
+  if(fmt==='x') return v.toFixed(1).replace('.',',')+'x';
+  if(fmt==='dias') return Math.round(v)+' dias';
+  return v;
+}
+
+// datas padrão
+function setDefaultDates(){
+  ['ini','ini2','ini3'].forEach(id=>document.getElementById(id).value = ini);
+  ['fim','fim2','fim3'].forEach(id=>document.getElementById(id).value = fim);
+}
+setDefaultDates();
+renderDRE();
+
+// filtros
+document.querySelectorAll('[data-filter]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-filter]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    filtro = btn.dataset.filter;
+    renderDRE();
+  });
+});
+document.querySelectorAll('[data-filter2]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-filter2]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    filtro = btn.dataset.filter2;
+    document.querySelectorAll('[data-filter]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.filter===filtro);
+    });
+    document.querySelectorAll('[data-filter3]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.filter3===filtro);
+    });
+    renderDRE();
+  });
+});
+document.querySelectorAll('[data-filter3]').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('[data-filter3]').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    filtro = btn.dataset.filter3;
+    document.querySelectorAll('[data-filter]').forEach(b=>{
+      b.classList.toggle('active', b.dataset.filter===filtro);
+    });
+    renderDRE();
+  });
+});
+
+// datas
+['ini','fim','ini2','fim2','ini3','fim3'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', e=>{
+    const v = e.target.value;
+    if(id.startsWith('ini')) ini = v;
+    if(id.startsWith('fim')) fim = v;
+    setDefaultDates();
+    renderDRE();
+  });
+});
+
+// abas
+const views = {dre:'v-dre', indices:'v-indices', detalhe:'v-detalhe'};
+const titulo = document.getElementById('titulo');
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected','false'));
+    t.setAttribute('aria-selected','true');
+    const key = t.dataset.tab;
+    Object.values(views).forEach(id=>document.getElementById(id).hidden=true);
+    document.getElementById(views[key]).hidden=false;
+    titulo.textContent = key==='dre'?'DRE Financeiro':(key==='indices'?'Índices Financeiros':'Detalhe');
+  });
+});
+
+// toast
+let toastTimeout=null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
